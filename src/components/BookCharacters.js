@@ -6,20 +6,34 @@ import "../App.css";
 import axios from "axios";
 import Form from "react-bootstrap/Form";
 import { useParams } from "react-router-dom";
+import ReactPaginate from "react-paginate";
 
 export default function BookCharacters() {
 
   const {id} = useParams();
-  const [characters, setCharacters] = useState([]);
+
+  const [characters, setCharacters] = useState([], () => {
+    const localData = localStorage.getItem("book_characters");
+    return localData ? JSON.parse(localData) : [];
+  });
+
   const [sort, setSort] = useState("");
   const [filter, setFilter] = useState("");
+  const [pageNumber, setPageNumber] = useState(0);
   let dep = [sort];
 
+  const characterPerPage = 10;
+  const pagesVisited = pageNumber * characterPerPage;
+
+  const pageCount = Math.ceil(characters.length / characterPerPage);
+  const changePage = ({ selected }) => {
+    setPageNumber(selected);
+  };
 
 
   useEffect(() => {
-    console.log("hello");
     getCharacters(sort);
+    localStorage.setItem("book_characters", JSON.stringify(characters));
   }, dep);
 
   const char_count = characters.map(c => {
@@ -133,7 +147,7 @@ export default function BookCharacters() {
           </Form>
         </div>
         <h4>Character Count: {char_count[0]}</h4>
-        <Table striped bordered hover>
+        <Table striped bordered hover className="mb-4">
           <thead>
             <tr>
               <th>S/N</th>
@@ -143,16 +157,29 @@ export default function BookCharacters() {
             </tr>
           </thead>
           <tbody>
-            {characters.map((character, key) => (
-              <tr key={key}>
-                <td style={{ width: "5%" }}>{character.id}</td>
-                <td>{character.name}</td>
-                <td>{character.born}</td>
-                <td>{character.gender}</td>
-              </tr>
-            ))}
+            {characters
+              .slice(pagesVisited, pagesVisited + characterPerPage)
+              .map((character, key) => (
+                <tr key={key}>
+                  <td style={{ width: "5%" }}>{character.id}</td>
+                  <td>{character.name}</td>
+                  <td>{character.born}</td>
+                  <td>{character.gender}</td>
+                </tr>
+              ))}
           </tbody>
         </Table>
+        <ReactPaginate
+          previousLabel={"Previous"}
+          nextLabel={"Next"}
+          pageCount={pageCount}
+          onPageChange={changePage}
+          containerClassName={"paginationBttns"}
+          previousLinkClassName={"previousBttn"}
+          nextLinkClassName={"nextBttn"}
+          disabledClassName={"paginationDisabled"}
+          activeClassName={"paginationActive"}
+        />
       </div>
     </div>
   );
